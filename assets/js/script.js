@@ -3,25 +3,51 @@ const nasaKey = '1Gmq9IgfdmLpDj35vHxqVvtjlq6u7jbXo0tpA8jg';
 let zuluTime = $('zulu-time');
 let locationOptions = $('#location-options');
 let locationPrevious = $('#location-previous');
-
-let locations = [];
+let locations;
+try
+{
+    locations = JSON.parse(localStorage.getItem('locations'));
+    if (locations == null) {
+        locations = [];
+    }
+    console.log(locations);
+} catch (error) {
+    console.log(error);
+}
 
 function storeData(name, forecast, data) {
+    
     let newLocation = {
         name: name,
         forecast: forecast,
         data: data
     }
-    locations.push(newLocation);
-    localStorage.setItem('locations', JSON.stringify(locations));
-    updateLocations();
+    /* Prevent duplicates. */
+    let hasDuplicates = false;
+    for (let i = 0; i < locations.length; i++) {
+        if (locations[i].name === name) {
+            hasDuplicates = true;
+        }
+    }
+    if (hasDuplicates === false) {
+        locations.push(newLocation);
+        localStorage.setItem('locations', JSON.stringify(locations));
+        updateLocations();  
+    }
 }
 
 function updateLocations() {
+    locationPrevious.html('');
     let locations = JSON.parse(localStorage.getItem('locations'));
-    for (let i = 0; i < locations.length; i++) {
-        locationPrevious.html(locationPrevious.html() + `<button class="m-2 w-100">${locations[i].name}</button>`)
+    let locationButtons = '';
+    try {
+        for (let i = 0; i < locations.length; i++) {
+            locationButtons += `<button onclick="callLatLong('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</button>`;
+        }
+    } catch (error) {
+        console.log(error);
     }
+    locationPrevious.append(locationButtons);
     
 }
 function kelvinToFahrenheit(kelvin) {
