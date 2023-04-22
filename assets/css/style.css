@@ -1,0 +1,8 @@
+@font-face {
+    font-family: "Diary of an 8-Bit Mage";
+    src: url("../../assets/fonts/DiaryOfAn8BitMage-lYDD.ttf");
+}
+
+* {
+    font-family: "Diary of an 8-Bit Mage";
+}
