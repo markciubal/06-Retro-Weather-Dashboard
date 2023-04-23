@@ -15,6 +15,26 @@ try
     console.log(error);
 }
 
+function removeLocation(name) {
+    for (let i = 0; i < locations.length; i++) {
+        if (locations[i].name == name) {
+            locations.splice(i, 1);
+        }
+    }
+    console.log(locations);
+    localStorage.setItem('locations', JSON.stringify(locations));
+    $('#five-day').html(`<div class="col p-5 d-flex align-items-start">
+                            <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
+                            </div>
+                            <div>
+                            <h5 class="fs-2">${name} Removed</h5>
+                            <hr/>
+                            <p>Use the search to display weather for a different area.</p>
+                            </div>
+                        </div>`);
+    updateLocations();
+}
+
 function storeData(name, forecast, data) {
     
     let newLocation = {
@@ -39,15 +59,27 @@ function storeData(name, forecast, data) {
 function updateLocations() {
     locationPrevious.html('');
     let locations = JSON.parse(localStorage.getItem('locations'));
-    let locationButtons = '';
+    let locationOptions = '';
     try {
+        
         for (let i = 0; i < locations.length; i++) {
-            locationButtons += `<button onclick="callLatLong('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</button>`;
+            locationOptions += `<li><a class=" dropdown-item" onclick="callLatLong('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</a></li>`;
         }
     } catch (error) {
         console.log(error);
     }
-    locationPrevious.append(locationButtons);
+    let locationButtons = `<div class="m-2 w-100 text-center">
+        <h6>Previous Searches</h6>
+        <div class="dropdown">
+            <button class="w-100 btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                ${locations.length} Options
+            </button>
+            <ul class="w-100 dropdown-menu">
+                ${locationOptions}
+            </ul>
+        </div>
+    </div>`;
+    locationPrevious.html(locationButtons);
     
 }
 function kelvinToFahrenheit(kelvin) {
@@ -66,6 +98,7 @@ function callLatLong(text, latitude, longitude) {
     .then(response => response.json())
     .then(response => {
             buildForecast(text, response);
+            $('#location').val('');
     })
 }
 
@@ -77,14 +110,12 @@ function buildForecast(text, forecast) {
   
                         </div>
                         <div>
-                        <h5 class="fs-2">${text}</h5>
+                        <h5 class="m-2 fs-2">${text}</h5>
                         <hr/>
-                        <p>${forecast.weather[0].description.toUpperCase()}</p>
-                        <p>High: ${kelvinToFahrenheit(forecast.main.temp_max).toFixed(2)}° F | Low: ${kelvinToFahrenheit(forecast.main.temp_min).toFixed(2)}° F</p>
-                        <p>Right Now: ${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F | Humidity: ${forecast.main.humidity}%</p>
-                        <a href="#" class="btn btn-primary">
-                            Primary button
-                        </a>
+                        <p>${forecast.weather[0].description.toUpperCase()}, ${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F</p>
+                        <p>High: ${kelvinToFahrenheit(forecast.main.temp_max).toFixed(2)}° F,  Low: ${kelvinToFahrenheit(forecast.main.temp_min).toFixed(2)}° F</p>
+                        <p>Right Now:| Humidity: ${forecast.main.humidity}%</p>
+                        <a class="btn btn-primary" onclick="removeLocation('${text}');" return false;>Remove</a>
                         </div>
                     </div>`;
     $('#five-day').html(outputHTML);
