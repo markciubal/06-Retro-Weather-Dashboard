@@ -28,7 +28,6 @@ function removeLocation(name) {
             locations.splice(i, 1);
         }
     }
-    console.log(locations);
     localStorage.setItem('locations', JSON.stringify(locations));
     $('#today').html(`<div class="col p-5 d-flex align-items-start">
                             <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
@@ -71,13 +70,12 @@ function updateLocations() {
     try {
         
         for (let i = 0; i < locations.length; i++) {
-            locationOptions += `<li><a class=" dropdown-item" onclick="callLatLong('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</a></li>`;
+            locationOptions += `<li><a class=" dropdown-item" onclick="getToday('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</a></li>`;
         }
     } catch (error) {
         // console.log(error);
     }
     let addS = '';
-    console.log(locations.length);
     if (locations.length == 1) {
         addS = '';
     } else {
@@ -102,11 +100,11 @@ function kelvinToFahrenheit(kelvin) {
     return fahrenheit;
 }
 
-function callLatLong(text, latitude, longitude) {
+function getToday(text, latitude, longitude) {
     thisName = text;
     thisLatitude = latitude;
     thisLongitude = longitude;
-    let apiURL = `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
+    let apiURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
     fetch(apiURL, {
         method: 'GET',
         headers: {
@@ -116,13 +114,13 @@ function callLatLong(text, latitude, longitude) {
     .then(response => response.json())
     .then(response => {
             buildForecast(text, response);
-            callFiveDay(text, latitude, longitude);
+            getFiveDay(text, latitude, longitude);
             $('#location').val('');
     })
 }
 
-function callFiveDay(text, latitude, longitude)  {
-    let apiURL = `http://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
+function getFiveDay(text, latitude, longitude)  {
+    let apiURL = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
     fetch(apiURL, {
         method: 'GET',
         headers: {
@@ -144,12 +142,14 @@ function getAverage(elements) {
 }
 function buildFiveDayForecast(text, forecast) {
     $('#five-day').html(``)
+    console.log(forecast);
     let fiveDayHTML = '';
     let previousDay;
     let dailyValues = [];
     let dayAverage;
     for (let i = 0; i < forecast.list.length; i++) {
         let thisDay = dayjs(forecast.list[i].dt_txt).format('YYYY-MM-DD');
+        console.log(kelvinToFahrenheit(forecast.list[i].main.temp));
         if (dailyValues[thisDay]) {
             dailyValues[thisDay] = {
                 average: forecast.list[i].main.temp + dailyValues[thisDay].average,
@@ -167,33 +167,28 @@ function buildFiveDayForecast(text, forecast) {
                 humidity: forecast.list[i].main.humidity
             };
         }
-        console.log(thisDay);
 
     }
-
+    console.log(dailyValues);
     let dayCount = 0;
     for (const dayValues in dailyValues) {
         if (dayCount < maxForecastDays) {
             let averageTempterature = dailyValues[dayValues].average/dailyValues[dayValues].count;
             fiveDayHTML += `<div class="text-center bg-body-secondary m-2 p-2 five-day-forecast rounded fade-in">
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
-                <img src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png" width="50px" height="50px"><br/>
+                <img class="five-day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>
                 Temp: ${kelvinToFahrenheit(averageTempterature).toFixed(2)}° F<br/>
-                Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)}<br/>
-                Hum: ${(dailyValues[dayValues].humidity/dailyValues[dayValues].count).toFixed(2)}
+                Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)} MPH<br/>
+                Hum: ${(dailyValues[dayValues].humidity/dailyValues[dayValues].count).toFixed(2)}%
 
             </div>`;
         }
         dayCount++;
     }
-    
-    console.log(dailyValues);
-    console.log(forecast.list);
     $('#five-day').append(fiveDayHTML);
 }
 
 function buildForecast(text, forecast) {
-    console.log(forecast);
     locationOptions.html('');
     let outputHTML = `<div class="col d-flex align-items-start fade-in">
                         <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
@@ -212,19 +207,17 @@ function buildForecast(text, forecast) {
                     <div class="d-flex align-items-center" id="five-day">
 
                     </div><br/>
-                    <a class="w-100 btn btn-danger fade-in" onclick="removeLocation('${text}');" return false;>Remove</a>`;
+                    <a class="m-2 w-25 btn btn-danger fade-in" onclick="removeLocation('${text}');" return false;>Remove</a>`;
     $('#today').html(outputHTML).fadeIn();
     storeData(text, forecast, outputHTML);
 }
 
 function displayOptions(options) {
     let responseHTML = '';
-    console.log(options);
     for (let i = 0; i < options.length; i++) {
-        responseHTML += `<li><a class="dropdown-item" onclick="callLatLong('${options[i].name}, ${options[i].state}, ${options[i].country}',${options[i].lat},${options[i].lon}); return false;">${options[i].name}, ${options[i].state}, ${options[i].country}</a></li>`;
+        responseHTML += `<li><a class="dropdown-item" onclick="getToday('${options[i].name}, ${options[i].state}, ${options[i].country}',${options[i].lat},${options[i].lon}); return false;">${options[i].name}, ${options[i].state}, ${options[i].country}</a></li>`;
     }
     let addS = '';
-    console.log(options.length);
     if (options.length == 1) {
         addS = '';
     } else {
@@ -247,8 +240,7 @@ function displayOptions(options) {
 function callWeatherFor(event) {
     event.preventDefault();
     let location = $('#location').val();
-    let apiURL = `http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=5&appid=${apiKey}`;
-    console.log(apiURL);
+    let apiURL = `https://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=5&appid=${apiKey}`;
     if (location !== '')
     {
         fetch(apiURL, {
@@ -261,29 +253,27 @@ function callWeatherFor(event) {
         .then(response => {
             console.log(response);
             if (response.length > 1) {
-                console.log(response);
                 displayOptions(response);
                 
             }
-            console.log(response);
-            console.log(locationOptions.innerHTML);
         })
     }
 }
 window.setInterval(function() {
-    $("#zulu-time").html(dayjs().utc().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
+    $("#zulu-time").html(dayjs().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
 }, 1000)
 
 // Weather condition updates every 5 minutes.
 window.setInterval(function() {
     try {
-        callLatLong(thisName, thisLatitude, thisLongitude);
+        getToday(thisName, thisLatitude, thisLongitude);
+        getFiveDay(thisName, thisLatitude, thisLongitude)
     } catch (error) {
         console.log(error);
         console.log("No location loaded.");
     }
     console.log("Update.");
-}, 300000)
+}, 60000)
 // 
 $(function () {
     $('#submit').on('click', callWeatherFor);

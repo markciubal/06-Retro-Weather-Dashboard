@@ -23,4 +23,14 @@
 
 .five-day-forecast {
     float: left;
+    font-size: .75rem;
+}
+
+.five-day-icon {
+    height: 30px;
+    width: 30px;
+}
+
+li {
+    cursor: pointer;
 }

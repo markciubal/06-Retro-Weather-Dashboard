@@ -15,3 +15,5 @@ WHEN I click on a city in the search history
 ```
 
 ## Credits
+Coded by Mark Ciubal
+Libraries Used: Day.js, jQuery, Bootstrap.
