@@ -22,15 +22,27 @@
 }
 
 .five-day-forecast {
-    float: left;
-    font-size: .75rem;
+    font-size: .65rem;
+    border: 1px solid black;
+    background: var(--bs-light);
 }
 
-.five-day-icon {
-    height: 30px;
-    width: 30px;
+.day-icon {
+    height: 50px;
+    width: 50px;
+    padding: 5px;
+    margin: 5px;
+    border-radius: 3px;
+}
+
+#instructions {
+    height: 80vh;
 }
 
 li {
     cursor: pointer;
+}
+
+#weather {
+    font-size: .95rem;
 }

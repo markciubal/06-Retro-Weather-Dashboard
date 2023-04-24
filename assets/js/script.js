@@ -10,7 +10,7 @@ let thisLatitude;
 let thisLongitude;
 let thisName;
 
-const maxForecastDays = 5;
+const ForecastDays = 5;
 
 try
 {
@@ -147,12 +147,24 @@ function buildFiveDayForecast(text, forecast) {
     let previousDay;
     let dailyValues = [];
     let dayAverage;
+    let newLow = 400;
+    let newHigh = 0;
     for (let i = 0; i < forecast.list.length; i++) {
         let thisDay = dayjs(forecast.list[i].dt_txt).format('YYYY-MM-DD');
-        console.log(kelvinToFahrenheit(forecast.list[i].main.temp));
+        // console.log(kelvinToFahrenheit(forecast.list[i].main.temp));
+
         if (dailyValues[thisDay]) {
+            if (forecast.list[i].main.temp <= dailyValues[thisDay].low)
+            {
+                newLow = forecast.list[i].main.temp;
+            }
+            if (forecast.list[i].main.temp >= dailyValues[thisDay].high) {
+                newHigh = forecast.list[i].main.temp;
+            }
             dailyValues[thisDay] = {
                 average: forecast.list[i].main.temp + dailyValues[thisDay].average,
+                low: newLow, 
+                high: newHigh,
                 count: dailyValues[thisDay].count + 1,
                 icon: forecast.list[i].weather[0].icon,
                 wind: forecast.list[i].wind.speed + dailyValues[thisDay].wind,
@@ -161,6 +173,8 @@ function buildFiveDayForecast(text, forecast) {
         } else {
             dailyValues[thisDay] = {
                 average: forecast.list[i].main.temp,
+                low: forecast.list[i].main.temp,
+                high: forecast.list[i].main.temp,
                 count: 1, 
                 icon: forecast.list[i].weather[0].icon,
                 wind: forecast.list[i].wind.speed,
@@ -172,15 +186,17 @@ function buildFiveDayForecast(text, forecast) {
     console.log(dailyValues);
     let dayCount = 0;
     for (const dayValues in dailyValues) {
-        if (dayCount < maxForecastDays) {
+        if (dayCount < ForecastDays) {
             let averageTempterature = dailyValues[dayValues].average/dailyValues[dayValues].count;
-            fiveDayHTML += `<div class="text-center bg-body-secondary m-2 p-2 five-day-forecast rounded fade-in">
+            fiveDayHTML += `<div class="col-2 text-center m-2 p-2 five-day-forecast rounded fade-in">
+                
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
-                <img class="five-day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>
+                <img class="day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
                 Temp: ${kelvinToFahrenheit(averageTempterature).toFixed(2)}° F<br/>
+                High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>
+                Low: ${kelvinToFahrenheit(dailyValues[dayValues].low).toFixed(2)}° F<br/>
                 Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)} MPH<br/>
                 Hum: ${(dailyValues[dayValues].humidity/dailyValues[dayValues].count).toFixed(2)}%
-
             </div>`;
         }
         dayCount++;
@@ -191,23 +207,20 @@ function buildFiveDayForecast(text, forecast) {
 function buildForecast(text, forecast) {
     locationOptions.html('');
     let outputHTML = `<div class="col d-flex align-items-start fade-in">
-                        <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
-                            <img src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png"><br/>
+                        <div class="icon-square rounded text-body-emphasis bg-body-tertiary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
+                            <img class="day-icon" src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png"><br/>
+                            
                         </div>
-                        <div>
-                            <h5 class="m-2 fs-2">${text}</h5>
+                        <div id="weather">
+                            <h5 class="m-2 fs-2">${text}<a class="m-2 btn btn-danger fade-in" onclick="removeLocation('${text}');" return false;>X</a></h5>
                             <p class="m-2">${forecast.coord.lat}, ${forecast.coord.lon}</p>
                             <hr/>
-                            <p>${forecast.weather[0].description.toUpperCase()}, ${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F</p>
+                            <p>${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F, ${forecast.weather[0].description.toUpperCase()}</p>
                             <p>High: ${kelvinToFahrenheit(forecast.main.temp_max).toFixed(2)}° F,  Low: ${kelvinToFahrenheit(forecast.main.temp_min).toFixed(2)}° F</p>
                             <p>Humidity: ${forecast.main.humidity}%</p>
                             <p>Wind: ${forecast.wind.speed} MPH, ${forecast.wind.deg} Degrees</p>
                         </div>
-                    </div>
-                    <div class="d-flex align-items-center" id="five-day">
-
-                    </div><br/>
-                    <a class="m-2 w-25 btn btn-danger fade-in" onclick="removeLocation('${text}');" return false;>Remove</a>`;
+                    </div>`;
     $('#today').html(outputHTML).fadeIn();
     storeData(text, forecast, outputHTML);
 }
