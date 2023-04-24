@@ -1,16 +1,23 @@
 const apiKey = '56cc8773d84f312c66cf68f01cfe031b';
 const nasaKey = '1Gmq9IgfdmLpDj35vHxqVvtjlq6u7jbXo0tpA8jg';
+
 let zuluTime = $('zulu-time');
 let locationOptions = $('#location-options');
 let locationPrevious = $('#location-previous');
 let locations;
+
+let thisLatitude;
+let thisLongitude;
+let thisName;
+
+const maxForecastDays = 5;
+
 try
 {
     locations = JSON.parse(localStorage.getItem('locations'));
     if (locations == null) {
         locations = [];
     }
-    console.log(locations);
 } catch (error) {
     console.log(error);
 }
@@ -23,7 +30,7 @@ function removeLocation(name) {
     }
     console.log(locations);
     localStorage.setItem('locations', JSON.stringify(locations));
-    $('#five-day').html(`<div class="col p-5 d-flex align-items-start">
+    $('#today').html(`<div class="col p-5 d-flex align-items-start">
                             <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
                             </div>
                             <div>
@@ -32,6 +39,7 @@ function removeLocation(name) {
                             <p>Use the search to display weather for a different area.</p>
                             </div>
                         </div>`);
+    $('#five-day').html('');
     updateLocations();
 }
 
@@ -66,13 +74,20 @@ function updateLocations() {
             locationOptions += `<li><a class=" dropdown-item" onclick="callLatLong('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</a></li>`;
         }
     } catch (error) {
-        console.log(error);
+        // console.log(error);
     }
-    let locationButtons = `<div class="m-2 w-100 text-center">
+    let addS = '';
+    console.log(locations.length);
+    if (locations.length == 1) {
+        addS = '';
+    } else {
+        addS = 's';
+    }
+    let locationButtons = `<div class="m-2 w-100 text-center fade-in">
         <h6>Previous Searches</h6>
         <div class="dropdown">
             <button class="w-100 btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                ${locations.length} Options
+                ${locations.length} Option${addS}
             </button>
             <ul class="w-100 dropdown-menu">
                 ${locationOptions}
@@ -88,6 +103,9 @@ function kelvinToFahrenheit(kelvin) {
 }
 
 function callLatLong(text, latitude, longitude) {
+    thisName = text;
+    thisLatitude = latitude;
+    thisLongitude = longitude;
     let apiURL = `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
     fetch(apiURL, {
         method: 'GET',
@@ -98,41 +116,126 @@ function callLatLong(text, latitude, longitude) {
     .then(response => response.json())
     .then(response => {
             buildForecast(text, response);
+            callFiveDay(text, latitude, longitude);
             $('#location').val('');
     })
 }
 
+function callFiveDay(text, latitude, longitude)  {
+    let apiURL = `http://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
+    fetch(apiURL, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(response => {
+            buildFiveDayForecast(text, response);
+    })
+}
+
+function getAverage(elements) {
+    let sum = 0;
+    for (let i = 0; i < elements.length; i++) {
+        sum = sum + elements[i];
+    }
+    return sum/elements.length;
+}
+function buildFiveDayForecast(text, forecast) {
+    $('#five-day').html(``)
+    let fiveDayHTML = '';
+    let previousDay;
+    let dailyValues = [];
+    let dayAverage;
+    for (let i = 0; i < forecast.list.length; i++) {
+        let thisDay = dayjs(forecast.list[i].dt_txt).format('YYYY-MM-DD');
+        if (dailyValues[thisDay]) {
+            dailyValues[thisDay] = {
+                average: forecast.list[i].main.temp + dailyValues[thisDay].average,
+                count: dailyValues[thisDay].count + 1,
+                icon: forecast.list[i].weather[0].icon,
+                wind: forecast.list[i].wind.speed + dailyValues[thisDay].wind,
+                humidity: forecast.list[i].main.humidity + dailyValues[thisDay].humidity
+            };
+        } else {
+            dailyValues[thisDay] = {
+                average: forecast.list[i].main.temp,
+                count: 1, 
+                icon: forecast.list[i].weather[0].icon,
+                wind: forecast.list[i].wind.speed,
+                humidity: forecast.list[i].main.humidity
+            };
+        }
+        console.log(thisDay);
+
+    }
+
+    let dayCount = 0;
+    for (const dayValues in dailyValues) {
+        if (dayCount < maxForecastDays) {
+            let averageTempterature = dailyValues[dayValues].average/dailyValues[dayValues].count;
+            fiveDayHTML += `<div class="text-center bg-body-secondary m-2 p-2 five-day-forecast rounded fade-in">
+                ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
+                <img src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png" width="50px" height="50px"><br/>
+                Temp: ${kelvinToFahrenheit(averageTempterature).toFixed(2)}° F<br/>
+                Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)}<br/>
+                Hum: ${(dailyValues[dayValues].humidity/dailyValues[dayValues].count).toFixed(2)}
+
+            </div>`;
+        }
+        dayCount++;
+    }
+    
+    console.log(dailyValues);
+    console.log(forecast.list);
+    $('#five-day').append(fiveDayHTML);
+}
+
 function buildForecast(text, forecast) {
     console.log(forecast);
-    let outputHTML = `<div class="col p-5 d-flex align-items-start">
+    locationOptions.html('');
+    let outputHTML = `<div class="col d-flex align-items-start fade-in">
                         <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
-                        <img src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png"><br/>
-  
+                            <img src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png"><br/>
                         </div>
                         <div>
-                        <h5 class="m-2 fs-2">${text}</h5>
-                        <hr/>
-                        <p>${forecast.weather[0].description.toUpperCase()}, ${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F</p>
-                        <p>High: ${kelvinToFahrenheit(forecast.main.temp_max).toFixed(2)}° F,  Low: ${kelvinToFahrenheit(forecast.main.temp_min).toFixed(2)}° F</p>
-                        <p>Right Now:| Humidity: ${forecast.main.humidity}%</p>
-                        <a class="btn btn-primary" onclick="removeLocation('${text}');" return false;>Remove</a>
+                            <h5 class="m-2 fs-2">${text}</h5>
+                            <p class="m-2">${forecast.coord.lat}, ${forecast.coord.lon}</p>
+                            <hr/>
+                            <p>${forecast.weather[0].description.toUpperCase()}, ${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F</p>
+                            <p>High: ${kelvinToFahrenheit(forecast.main.temp_max).toFixed(2)}° F,  Low: ${kelvinToFahrenheit(forecast.main.temp_min).toFixed(2)}° F</p>
+                            <p>Humidity: ${forecast.main.humidity}%</p>
+                            <p>Wind: ${forecast.wind.speed} MPH, ${forecast.wind.deg} Degrees</p>
                         </div>
-                    </div>`;
-    $('#five-day').html(outputHTML);
+                    </div>
+                    <div class="d-flex align-items-center" id="five-day">
+
+                    </div><br/>
+                    <a class="w-100 btn btn-danger fade-in" onclick="removeLocation('${text}');" return false;>Remove</a>`;
+    $('#today').html(outputHTML).fadeIn();
     storeData(text, forecast, outputHTML);
 }
 
 function displayOptions(options) {
     let responseHTML = '';
+    console.log(options);
     for (let i = 0; i < options.length; i++) {
         responseHTML += `<li><a class="dropdown-item" onclick="callLatLong('${options[i].name}, ${options[i].state}, ${options[i].country}',${options[i].lat},${options[i].lon}); return false;">${options[i].name}, ${options[i].state}, ${options[i].country}</a></li>`;
     }
+    let addS = '';
+    console.log(options.length);
+    if (options.length == 1) {
+        addS = '';
+    } else {
+        addS = 's';
+    }
     locationOptions.html(`
-    <div class="m-2 text-center">
+    <div class="m-2 text-center fade-in">
         <p>There were a few results for "${options[0].name}".</p>
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                ${options.length} Options
+                ${options.length} Option${addS}
             </button>
             <ul class="dropdown-menu">
                 ${responseHTML}
@@ -168,11 +271,26 @@ function callWeatherFor(event) {
     }
 }
 window.setInterval(function() {
-    $("#zulu-time").html(dayjs().format('dddd, MMMM DD, YYYY HH:mm:ss '));
+    $("#zulu-time").html(dayjs().utc().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
 }, 1000)
 
+// Weather condition updates every 5 minutes.
+window.setInterval(function() {
+    try {
+        callLatLong(thisName, thisLatitude, thisLongitude);
+    } catch (error) {
+        console.log(error);
+        console.log("No location loaded.");
+    }
+    console.log("Update.");
+}, 300000)
+// 
 $(function () {
     $('#submit').on('click', callWeatherFor);
-    updateLocations();
- 
+    try
+    {
+        updateLocations();;
+    } catch (error) {
+        // console.log(error);
+    }
 });
