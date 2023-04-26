@@ -192,7 +192,6 @@ function buildFiveDayForecast(text, forecast) {
                 
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
                 <img class="day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
-                Temp: ${kelvinToFahrenheit(averageTempterature).toFixed(2)}° F<br/>
                 High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>
                 Low: ${kelvinToFahrenheit(dailyValues[dayValues].low).toFixed(2)}° F<br/>
                 Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)} MPH<br/>
@@ -212,7 +211,7 @@ function buildForecast(text, forecast) {
                             
                         </div>
                         <div id="weather">
-                            <h5 class="m-2 fs-2">${text}<a class="m-2 btn btn-danger fade-in" onclick="removeLocation('${text}');" return false;>X</a></h5>
+                            <h5 class="align-self-middle m-2 fs-2">${text}<a class="m-2 btn btn-danger mt-0 fade-in" onclick="removeLocation('${text}');" return false;>X</a></h5>
                             <p class="m-2">${forecast.coord.lat}, ${forecast.coord.lon}</p>
                             <hr/>
                             <p>${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F, ${forecast.weather[0].description.toUpperCase()}</p>
@@ -292,7 +291,7 @@ $(function () {
     $('#submit').on('click', callWeatherFor);
     try
     {
-        updateLocations();;
+        updateLocations();
     } catch (error) {
         // console.log(error);
     }
