@@ -37,7 +37,7 @@ function removeLocation(name) {
     }
     localStorage.setItem('locations', JSON.stringify(locations));
     $('#today').html(`<div class="col p-5 d-flex align-items-start">
-                            <div class="icon-square rounded text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
+                            <div class="icon-square rounded text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: #565e64" >
                             </div>
                             <div>
                             <h5 class="fs-2">${name} Removed</h5>
@@ -225,7 +225,7 @@ function buildFiveDayForecast(text, forecast) {
 
             fiveDayHTML += `<div class="col-5 col-md-2 text-center p-0 five-day-forecast rounded fade-in">
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
-                <img class="day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
+                <img class="day-icon icon-square rounded text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: #ddd" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
                 High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>at ${timeAtHighest}<br/>
                 Low: ${kelvinToFahrenheit(dailyValues[dayValues].low).toFixed(2)}° F<br/>at ${timeAtLowest}<br/>
                 Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)} MPH<br/>
@@ -243,7 +243,7 @@ function buildForecast(text, forecast) {
     locationOptions.html('');
     let outputHTML = `<div class="col d-flex align-items-start fade-in">
                         <div class="icon-square rounded text-body-emphasis bg-body-tertiary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: white" >
-                            <img class="day-icon" src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png"><br/>
+                            <img class="day-icon icon-square rounded text-body-emphasis d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3" style="background-color: #ddd" src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png"><br/>
                             
                         </div>
                         <div id="weather">
