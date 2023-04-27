@@ -85,7 +85,7 @@ function updateLocations() {
         <h6>Previous Searches</h6>
         <div class="dropdown">
             <button class="w-100 btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                ${locations.length} Option${addS}
+                ${locations.length} Previous Option${addS}
             </button>
             <ul class="w-100 dropdown-menu">
                 ${locationOptions}
@@ -206,7 +206,7 @@ function buildFiveDayForecast(text, forecast) {
             console.log(timeAtHighest);
             console.log(timeAtLowest);
 
-            fiveDayHTML += `<div class="col-2 text-center m-2 p-1 five-day-forecast rounded fade-in">
+            fiveDayHTML += `<div class="col-5 col-md-2 text-center m-2 p-1 five-day-forecast rounded fade-in">
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
                 <img class="day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
                 High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>at ${timeAtHighest}<br/>
