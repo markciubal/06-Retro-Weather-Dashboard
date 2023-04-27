@@ -263,9 +263,20 @@ function buildForecast(text, forecast) {
 
 // Display options in the dropdown menu on the left side.
 function displayOptions(options) {
+    console.log(options.length);
     let responseHTML = '';
     for (let i = 0; i < options.length; i++) {
-        responseHTML += `<li><a class="dropdown-item" onclick="getToday('${options[i].name}, ${options[i].state}, ${options[i].country}',${options[i].lat},${options[i].lon}); return false;">${options[i].name}, ${options[i].state}, ${options[i].country}</a></li>`;
+        let displayName = '';
+        if (typeof options[i].name !== 'undefined') {
+            displayName += options[i].name;
+        }
+        if (typeof options[i].state !== 'undefined') {
+            displayName += ", " + options[i].state;
+        }
+        if (typeof options[i].country !== 'undefined') {
+            displayName += ", " + options[i].country;
+        }
+        responseHTML += `<li><a class="dropdown-item" onclick="getToday('${displayName}',${options[i].lat},${options[i].lon}); return false;">${displayName}</a></li>`;
     }
     let addS = '';
     if (options.length == 1) {
@@ -287,6 +298,10 @@ function displayOptions(options) {
     </div>`);
 }
 
+function displayNoOptions() {
+    locationOptions.html("No locations found for that search.");
+}
+
 // Calls the weather for the location specified in the location text input.
 function callWeatherFor(event) {
     event.preventDefault();
@@ -303,9 +318,11 @@ function callWeatherFor(event) {
         .then(response => response.json())
         .then(response => {
             console.log(response);
-            if (response.length > 1) {
+            if (response.length > 0) {
                 displayOptions(response);
                 
+            } else {
+                displayNoOptions();
             }
         })
     }
