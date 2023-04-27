@@ -142,7 +142,7 @@ function getAverage(elements) {
     return sum/elements.length;
 }
 function buildFiveDayForecast(text, forecast) {
-    $('#five-day').html(`<h2>Five Day Forecast</h2>`)
+    $('#five-day').html(`<h2 class="text-center">Five Day Forecast</h2>`)
     let fiveDayHTML = '';
     let dailyValues = [];
     let newLow = 400;
@@ -206,7 +206,7 @@ function buildFiveDayForecast(text, forecast) {
             console.log(timeAtHighest);
             console.log(timeAtLowest);
 
-            fiveDayHTML += `<div class="col-5 col-md-2 text-center m-2 p-1 five-day-forecast rounded fade-in">
+            fiveDayHTML += `<div class="col-5 col-md-2 text-center p-0 five-day-forecast rounded fade-in">
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
                 <img class="day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
                 High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>at ${timeAtHighest}<br/>

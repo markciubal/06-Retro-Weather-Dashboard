@@ -5,7 +5,7 @@ The purpose of this assignment was to create a weather dashboard to show weather
 
 All of the acceptance criteria are met, but I am happiest with the card for the current weather. I think it looks the cleanest of all of the elements I created on the page.
 
-Hope you enjoy the product!
+Hope you enjoy the product, it is meant to be viewed in full screen but mobile works to the best of my ability!
 
 ## Acceptance Criteria
 
