@@ -1,18 +1,23 @@
-const apiKey = '56cc8773d84f312c66cf68f01cfe031b';
-const nasaKey = '1Gmq9IgfdmLpDj35vHxqVvtjlq6u7jbXo0tpA8jg';
 
+// API Keys, would include in a .env file but then the application wouldn't deploy.
+const apiKey = '56cc8773d84f312c66cf68f01cfe031b';
+
+// Setting some variables to refer to some of the elements on the page.
 let zuluTime = $('zulu-time');
 let locationOptions = $('#location-options');
 let locationPrevious = $('#location-previous');
 let locations;
 
+// Set global variable to keep track of latitude, longitude, name, and forecast.
 let thisLatitude;
 let thisLongitude;
 let thisName;
 let forecast; 
 
+// Only display 5 of the 8 days that the API returns.
 const ForecastDays = 5;
 
+// Check to see if locations are stored in localstorage, if they are load them, if not create a new empty list.
 try
 {
     locations = JSON.parse(localStorage.getItem('locations'));
@@ -23,6 +28,7 @@ try
     console.log(error);
 }
 
+// Code to remove locations from the page and localstorage list.
 function removeLocation(name) {
     for (let i = 0; i < locations.length; i++) {
         if (locations[i].name == name) {
@@ -43,6 +49,7 @@ function removeLocation(name) {
     updateLocations();
 }
 
+// Stores the data into localstorage.
 function storeData(name, forecast, data) {
     
     let newLocation = {
@@ -64,6 +71,7 @@ function storeData(name, forecast, data) {
     }
 }
 
+// Updates the locations when it is called, or every 10 minutes.
 function updateLocations() {
     locationPrevious.html('');
     let locations = JSON.parse(localStorage.getItem('locations'));
@@ -95,11 +103,14 @@ function updateLocations() {
     locationPrevious.html(locationButtons);
     
 }
+
+// Function to convert Kelvin to Fahrenheit.
 function kelvinToFahrenheit(kelvin) {
     let fahrenheit = 1.8 * (kelvin - 273) + 32;
     return fahrenheit;
 }
 
+// Get the weather for today.
 function getToday(text, latitude, longitude) {
     thisName = text;
     thisLatitude = latitude;
@@ -120,6 +131,7 @@ function getToday(text, latitude, longitude) {
     })
 }
 
+// Get the 8 day forecast, but only process 5 days (those were the instructions).
 function getFiveDay(text, latitude, longitude)  {
     let apiURL = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&exclude=hourly&appid=${apiKey}`;
     fetch(apiURL, {
@@ -134,6 +146,7 @@ function getFiveDay(text, latitude, longitude)  {
     })
 }
 
+// Get the average of an array of numbers.
 function getAverage(elements) {
     let sum = 0;
     for (let i = 0; i < elements.length; i++) {
@@ -141,6 +154,8 @@ function getAverage(elements) {
     }
     return sum/elements.length;
 }
+
+// Build up the five day forecast.
 function buildFiveDayForecast(text, forecast) {
     $('#five-day').html(`<h2 class="text-center">Five Day Forecast</h2>`)
     let fiveDayHTML = '';
@@ -159,6 +174,7 @@ function buildFiveDayForecast(text, forecast) {
 
 
         if (dailyValues[thisDay]) {
+            // FInd min/max.
             if (forecast.list[i].main.temp <= dailyValues[thisDay].low)
             {
                 newLow = forecast.list[i].main.temp;
@@ -196,7 +212,8 @@ function buildFiveDayForecast(text, forecast) {
         }
 
     }
-
+    
+    // Go through each day and build the foreast.
     for (const dayValues in dailyValues) {
         if (dayCount < ForecastDays) {      
             console.log(forecast);     
@@ -221,6 +238,7 @@ function buildFiveDayForecast(text, forecast) {
     $('#five-day').append(fiveDayHTML);
 }
 
+// Build the forecast for the day.
 function buildForecast(text, forecast) {
     locationOptions.html('');
     let outputHTML = `<div class="col d-flex align-items-start fade-in">
@@ -243,6 +261,7 @@ function buildForecast(text, forecast) {
     storeData(text, forecast, outputHTML);
 }
 
+// Display options in the dropdown menu on the left side.
 function displayOptions(options) {
     let responseHTML = '';
     for (let i = 0; i < options.length; i++) {
@@ -268,6 +287,7 @@ function displayOptions(options) {
     </div>`);
 }
 
+// Calls the weather for the location specified in the location text input.
 function callWeatherFor(event) {
     event.preventDefault();
     let location = $('#location').val();
@@ -290,6 +310,8 @@ function callWeatherFor(event) {
         })
     }
 }
+
+// Set a timer every second to update the times, and if a locatoin is loaded, the time of that location.
 window.setInterval(function() {
     $("#local-time").html(dayjs().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
     $("#zulu-time").html(dayjs().utc().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
@@ -310,7 +332,8 @@ window.setInterval(function() {
     }
     console.log("Update.");
 }, 600000)
-// 
+
+// On load, create a listener to call the weather for the location listed in the location text input.
 $(function () {
     $('#submit').on('click', callWeatherFor);
     try
