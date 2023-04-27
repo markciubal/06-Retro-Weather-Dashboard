@@ -9,6 +9,7 @@ let locations;
 let thisLatitude;
 let thisLongitude;
 let thisName;
+let forecast; 
 
 const ForecastDays = 5;
 
@@ -68,7 +69,6 @@ function updateLocations() {
     let locations = JSON.parse(localStorage.getItem('locations'));
     let locationOptions = '';
     try {
-        
         for (let i = 0; i < locations.length; i++) {
             locationOptions += `<li><a class=" dropdown-item" onclick="getToday('${locations[i].name}',${locations[i].forecast.coord.lat},${locations[i].forecast.coord.lon}); return false;" class="saved-weather m-2 w-100">${locations[i].name}</a></li>`;
         }
@@ -113,6 +113,7 @@ function getToday(text, latitude, longitude) {
     })
     .then(response => response.json())
     .then(response => {
+            forecast = response;
             buildForecast(text, response);
             getFiveDay(text, latitude, longitude);
             $('#location').val('');
@@ -141,40 +142,52 @@ function getAverage(elements) {
     return sum/elements.length;
 }
 function buildFiveDayForecast(text, forecast) {
-    $('#five-day').html(``)
-    console.log(forecast);
+    $('#five-day').html(`<h2>Five Day Forecast</h2>`)
     let fiveDayHTML = '';
-    let previousDay;
     let dailyValues = [];
-    let dayAverage;
     let newLow = 400;
+
     let newHigh = 0;
+    let dayCount = 0;
+
+    let timeAtHighest;
+    let timeAtLowest;
+
     for (let i = 0; i < forecast.list.length; i++) {
+
         let thisDay = dayjs(forecast.list[i].dt_txt).format('YYYY-MM-DD');
-        // console.log(kelvinToFahrenheit(forecast.list[i].main.temp));
+
 
         if (dailyValues[thisDay]) {
             if (forecast.list[i].main.temp <= dailyValues[thisDay].low)
             {
                 newLow = forecast.list[i].main.temp;
-            }
-            if (forecast.list[i].main.temp >= dailyValues[thisDay].high) {
+                timeAtLowest = forecast.list[i].dt_txt;
+            } else if (forecast.list[i].main.temp >= dailyValues[thisDay].high) {
                 newHigh = forecast.list[i].main.temp;
+                timeAtHighest = forecast.list[i].dt_txt;
+                
             }
+
             dailyValues[thisDay] = {
                 average: forecast.list[i].main.temp + dailyValues[thisDay].average,
                 low: newLow, 
                 high: newHigh,
+                timeHigh: timeAtHighest,
+                timeLow: timeAtLowest,                
                 count: dailyValues[thisDay].count + 1,
                 icon: forecast.list[i].weather[0].icon,
                 wind: forecast.list[i].wind.speed + dailyValues[thisDay].wind,
                 humidity: forecast.list[i].main.humidity + dailyValues[thisDay].humidity
-            };
+            }
+
         } else {
             dailyValues[thisDay] = {
                 average: forecast.list[i].main.temp,
                 low: forecast.list[i].main.temp,
                 high: forecast.list[i].main.temp,
+                timeLow: timeAtLowest,
+                timeHigh: timeAtHighest,
                 count: 1, 
                 icon: forecast.list[i].weather[0].icon,
                 wind: forecast.list[i].wind.speed,
@@ -183,23 +196,28 @@ function buildFiveDayForecast(text, forecast) {
         }
 
     }
-    console.log(dailyValues);
-    let dayCount = 0;
+
     for (const dayValues in dailyValues) {
-        if (dayCount < ForecastDays) {
-            let averageTempterature = dailyValues[dayValues].average/dailyValues[dayValues].count;
-            fiveDayHTML += `<div class="col-2 text-center m-2 p-2 five-day-forecast rounded fade-in">
-                
+        if (dayCount < ForecastDays) {      
+            console.log(forecast);     
+            console.log(dailyValues[dayValues].timeLow);
+            timeAtHighest = dayjs(dailyValues[dayValues].timeLow, 'YYYY-MM-DD HH:mm:ss').utcOffset(forecast.city.timezone/60).format('HH:mm');
+            timeAtLowest = dayjs(dailyValues[dayValues].timeHigh, 'YYYY-MM-DD HH:mm:ss').utcOffset(forecast.city.timezone/60).format('HH:mm');
+            console.log(timeAtHighest);
+            console.log(timeAtLowest);
+
+            fiveDayHTML += `<div class="col-2 text-center m-2 p-1 five-day-forecast rounded fade-in">
                 ${dayValues}<br/>${dayjs(dayValues).format('dddd')}<br/>
                 <img class="day-icon" src="https://openweathermap.org/img/wn/${dailyValues[dayValues].icon}@2x.png"><br/>  
-                High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>
-                Low: ${kelvinToFahrenheit(dailyValues[dayValues].low).toFixed(2)}° F<br/>
+                High: ${kelvinToFahrenheit(dailyValues[dayValues].high).toFixed(2)}° F<br/>at ${timeAtHighest}<br/>
+                Low: ${kelvinToFahrenheit(dailyValues[dayValues].low).toFixed(2)}° F<br/>at ${timeAtLowest}<br/>
                 Wind: ${(dailyValues[dayValues].wind/dailyValues[dayValues].count).toFixed(2)} MPH<br/>
                 Hum: ${(dailyValues[dayValues].humidity/dailyValues[dayValues].count).toFixed(2)}%
             </div>`;
         }
         dayCount++;
     }
+
     $('#five-day').append(fiveDayHTML);
 }
 
@@ -212,6 +230,7 @@ function buildForecast(text, forecast) {
                         </div>
                         <div id="weather">
                             <h5 class="align-self-middle m-2 fs-2">${text}<a class="m-2 btn btn-danger mt-0 fade-in" onclick="removeLocation('${text}');" return false;>X</a></h5>
+                            <p class="m-2"><span id="location-time">XXXXXXXXX, XXXXXXXX XX, XXXX XX:XX:XXXXX:00</span></p>
                             <p class="m-2">${forecast.coord.lat}, ${forecast.coord.lon}</p>
                             <hr/>
                             <p>${kelvinToFahrenheit(forecast.main.temp).toFixed(2)}° F, ${forecast.weather[0].description.toUpperCase()}</p>
@@ -272,10 +291,15 @@ function callWeatherFor(event) {
     }
 }
 window.setInterval(function() {
-    $("#zulu-time").html(dayjs().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
+    $("#local-time").html(dayjs().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
+    $("#zulu-time").html(dayjs().utc().format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
+    try { 
+        $("#location-time").html(dayjs().utcOffset(forecast.timezone/60).format('dddd, MMMM DD, YYYY HH:mm:ssZ'));
+    } catch {
+    }
 }, 1000)
 
-// Weather condition updates every 5 minutes.
+// Weather condition updates every 10 minutes.
 window.setInterval(function() {
     try {
         getToday(thisName, thisLatitude, thisLongitude);
@@ -285,14 +309,14 @@ window.setInterval(function() {
         console.log("No location loaded.");
     }
     console.log("Update.");
-}, 60000)
+}, 600000)
 // 
 $(function () {
     $('#submit').on('click', callWeatherFor);
     try
     {
-        updateLocations();
+        updateLocations();;
     } catch (error) {
-        // console.log(error);
+            console.log(error);
     }
 });
