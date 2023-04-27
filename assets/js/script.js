@@ -213,7 +213,7 @@ function buildFiveDayForecast(text, forecast) {
 
     }
     
-    // Go through each day and build the foreast.
+    // Go through each day and build the forceast.
     for (const dayValues in dailyValues) {
         if (dayCount < ForecastDays) {      
             console.log(forecast);     
